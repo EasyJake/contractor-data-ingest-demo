@@ -19,7 +19,7 @@ st.markdown("Upload contractor pre-qualification packages to generate automated 
 st.divider()
 
 # ── Sidebar ───────────────────────────────────────────────
-api_key = st.sidebar.text_input(
+api_key = st.secrets.get("ANTHROPIC_API_KEY", "") or st.sidebar.text_input(
     "Anthropic API Key",
     type="password",
     help="Required for AI-generated explanations"
