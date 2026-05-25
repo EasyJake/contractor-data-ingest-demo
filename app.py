@@ -398,7 +398,7 @@ if uploaded_files:
         </table>"""), unsafe_allow_html=True)
 
     # ── Individual scorecards ─────────────────────────────
-    for r in all_results:
+    for idx, r in enumerate(all_results):
         data, scoring = r["data"], r["scoring"]
         company = data["company_name"]
 
@@ -436,15 +436,13 @@ if uploaded_files:
         with st.spinner("Generating PDF scorecard..."):
             pdf_bytes = generate_scorecard_pdf(company, data, scoring, explanation)
         safe_name = (company.lower().replace(" ", "_")
-                     .replace(",", "").replace(".", ""))
-        key_base = (safe_name if company != "Uknown"
-                    else r["filename"].replace(")", "").replace(".pdf", "").replace(" ", "_"))
+                     .replace(",", "").replace(".", "")) or "contractor"
         st.download_button(
             label="⬇  Download Scorecard PDF",
             data=pdf_bytes,
             file_name=f"scorecard_{safe_name}.pdf",
             mime="application/pdf",
-            key=f"download_{key_base}",
+            key=f"download_{idx}_{safe_name}",
         )
         st.markdown("<div style='height:26px'></div>", unsafe_allow_html=True)
 else:
