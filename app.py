@@ -1,3 +1,6 @@
+import re
+import textwrap
+
 import streamlit as st
 from pipeline import (
     extract_contractor_fields,
@@ -5,6 +8,13 @@ from pipeline import (
     generate_explanation,
     generate_scorecard_pdf
 )
+
+
+def _clean_html(s: str) -> str:
+    """Strip leading indentation so Streamlit's markdown parser does not
+    treat indented HTML as a code block (which would escape the tags)."""
+    s = textwrap.dedent(s)
+    return re.sub(r"\n\s+", "\n", s).strip()
 
 # ── Page config ───────────────────────────────────────────
 st.set_page_config(
@@ -182,7 +192,7 @@ LOGO_MARK = """
 """
 
 # ── Top header ────────────────────────────────────────────
-st.markdown(f"""
+st.markdown(_clean_html(f"""
 <div class="cq-topbar">
   <div class="cq-brand">
     {LOGO_MARK}
@@ -195,7 +205,7 @@ st.markdown(f"""
     <div class="cq-avatar">UT</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+"""), unsafe_allow_html=True)
 
 st.markdown(
     '<div class="cq-h1">Contractor Qualification</div>'
@@ -241,7 +251,7 @@ def render_verdict(company, scoring, data):
     meta = "&nbsp;&nbsp;·&nbsp;&nbsp;".join(
         f"<b>{lbl}:</b> {val}" for lbl, val in meta_bits if val and val != "Unknown"
     ) or "<b>Company details not extracted</b>"
-    return f"""
+    return _clean_html(f"""
     <div class="cq-verdict cq-v-{sc}">
       <div>
         <span class="cq-status-pill cq-sp-{sc}">{status}{auto}</span>
@@ -255,7 +265,7 @@ def render_verdict(company, scoring, data):
         </div>
       </div>
     </div>
-    """
+    """)
 
 
 def render_score_grid(scoring):
@@ -276,7 +286,7 @@ def render_score_grid(scoring):
           <div class="cq-card-stat cq-t-{c}">{RAG_TEXT[rag]}</div>
         </div>
         """
-    return f'<div class="cq-grid">{cards}</div>'
+    return _clean_html(f'<div class="cq-grid">{cards}</div>')
 
 
 def render_flags(data):
@@ -285,18 +295,18 @@ def render_flags(data):
             f'<div class="cq-flag"><span>&#9888;</span><span>{f}</span></div>'
             for f in data["red_flags"]
         )
-        return f'<div class="cq-section">Risk Flags</div>{items}'
-    return '<div class="cq-clear"><span>&#10003;</span><span>No critical risk flags identified.</span></div>'
+        return _clean_html(f'<div class="cq-section">Risk Flags</div>{items}')
+    return _clean_html('<div class="cq-clear"><span>&#10003;</span><span>No critical risk flags identified.</span></div>')
 
 
 # ══════════════════════════════════════════════════════════
 #  Sidebar
 # ══════════════════════════════════════════════════════════
-st.sidebar.markdown(
+st.sidebar.markdown(_clean_html(
     f'<div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">'
     f'{LOGO_MARK}<span class="cq-side-logo">'
     f'<span style="color:#2E9E5B">Can</span><span style="color:#1B3A6B">Qualify</span>'
-    f'</span></div>', unsafe_allow_html=True)
+    f'</span></div>'), unsafe_allow_html=True)
 
 api_key = st.secrets.get("ANTHROPIC_API_KEY", "") or st.sidebar.text_input(
     "Anthropic API Key",
@@ -378,14 +388,14 @@ if uploaded_files:
               <td>{trir_val}</td>
               <td>{d['red_flag_count']}</td>
             </tr>"""
-        st.markdown(f"""
+        st.markdown(_clean_html(f"""
         <table class="cq-table">
           <thead><tr>
             <th>Contractor</th><th>Status</th><th>Score</th>
             <th>EMR</th><th>TRIR</th><th>Risk Flags</th>
           </tr></thead>
           <tbody>{rows}</tbody>
-        </table>""", unsafe_allow_html=True)
+        </table>"""), unsafe_allow_html=True)
 
     # ── Individual scorecards ─────────────────────────────
     for r in all_results:
@@ -415,9 +425,9 @@ if uploaded_files:
         if api_key:
             with st.spinner("Generating AI analysis..."):
                 explanation = generate_explanation(company, scoring, data, api_key)
-            st.markdown(
+            st.markdown(_clean_html(
                 f'<div class="cq-block cq-ai"><div class="cq-section" '
-                f'style="margin-top:0">AI Analysis</div><p>{explanation}</p></div>',
+                f'style="margin-top:0">AI Analysis</div><p>{explanation}</p></div>'),
                 unsafe_allow_html=True)
         else:
             st.info("Add your Anthropic API key in the sidebar for AI-generated analysis.")
